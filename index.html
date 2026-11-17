@@ -95,7 +95,10 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:12px 0 10px}
   <button class="shutter" id="captureBtn" aria-label="Take photo"></button>
   <button class="record" id="recordBtn" aria-label="Record video">●</button>
  </section>
- <div class="status" id="status">Allow camera access, then start capturing.</div>
+ <div class="status" id="status">Tap START CAMERA and allow Safari camera access.</div>
+ <div style="display:flex;justify-content:center;padding:0 18px 10px">
+  <button id="startCameraMain" style="background:#f6c94b;color:#17130a;border-radius:24px;padding:13px 26px;font-weight:900;letter-spacing:.5px">START CAMERA</button>
+ </div>
  <div class="notice"><strong>200× is digital zoom.</strong> iPhone 13 Pro Max has up to 3× optical telephoto zoom. Extreme zoom enlarges a small part of the image and cannot restore detail that the sensor did not capture.</div>
 </main>
 <nav class="bottom"><button class="active" id="tabCamera">◉ CAMERA</button><button id="tabGallery">▦ GALLERY</button><button id="helpBtn">ⓘ HOW TO INSTALL</button></nav>
@@ -121,15 +124,31 @@ slider.addEventListener('input',e=>setZoom(e.target.value));
 $('#presets').addEventListener('click',e=>{let b=e.target.closest('[data-z]');if(b)setZoom(b.dataset.z)});
 async function startCamera(){
  try{
-  if(!navigator.mediaDevices?.getUserMedia) throw new Error('Camera access is not available. Open this site in Safari over HTTPS.');
+  if(!window.isSecureContext || !navigator.mediaDevices?.getUserMedia)
+   throw new Error('Camera access needs the HTTPS Vercel website opened in Safari. Do not open the ZIP or a local HTML file.');
   if(stream) stream.getTracks().forEach(t=>t.stop());
-  stream=await navigator.mediaDevices.getUserMedia({audio:true,video:{facingMode:{ideal:facing},width:{ideal:1920},height:{ideal:1080}}});
+  stream=await navigator.mediaDevices.getUserMedia({
+   audio:false,
+   video:{facingMode:{ideal:facing},width:{ideal:1920},height:{ideal:1080}}
+  });
   video.srcObject=stream; track=stream.getVideoTracks()[0]; await video.play();
+  $('#startCameraMain').textContent='CAMERA RUNNING';
+  $('#startCameraMain').style.background='#26364a';
+  $('#startCameraMain').style.color='#ffffff';
   $('#placeholder').style.display='none';
   let s=track.getSettings(); $('#resolution').textContent=(s.width||'')+' × '+(s.height||'');
   $('#lensLabel').textContent=facing==='environment'?'REAR CAMERA':'FRONT CAMERA';
   say('Camera is live. Tap the preview to focus where supported.');
- }catch(e){say(e.message||'Unable to start camera. Check Safari camera permissions.');}
+ }catch(e){
+  $('#startCameraMain').textContent='TRY CAMERA AGAIN';
+  $('#startCameraMain').style.background='#f6c94b';
+  $('#startCameraMain').style.color='#17130a';
+  const reason=e.name==='NotAllowedError'?'Camera permission was denied. In iPhone Settings → Safari → Camera, choose Allow, then reload this page.':
+    e.name==='NotFoundError'?'No camera was found on this device.':
+    e.name==='NotReadableError'?'The camera is busy in another app. Close other camera apps and try again.':
+    (e.message||'Unable to start camera. Open the deployed HTTPS site in Safari and allow camera access.');
+  say(reason);
+}
 }
 $('#stage').addEventListener('click',e=>{
  const r=$('#stage').getBoundingClientRect(), x=e.clientX-r.left,y=e.clientY-r.top, mark=$('#focusmark');
@@ -140,7 +159,8 @@ $('#stage').addEventListener('click',e=>{
   if(caps?.focusMode?.includes('single-shot')) track.applyConstraints({advanced:[{focusMode:'single-shot'}]}).catch(()=>{});
  }
 });
-$('#startBtn').onclick=startCamera;\n$('#switchBtn').onclick=()=>{facing=facing==='environment'?'user':'environment';startCamera()};
+$('#startBtn').onclick=(e)=>{e.stopPropagation();startCamera()};
+$('#startCameraMain').onclick=startCamera;\n$('#switchBtn').onclick=()=>{facing=facing==='environment'?'user':'environment';startCamera()};
 document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.mode').forEach(x=>x.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode;
  $('#recordLabel').textContent=mode.toUpperCase();
