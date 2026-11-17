@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Super Zoom">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon.svg">
+<title>Super Zoom Pro Camera</title>
+<style>
+:root{color-scheme:dark;--bg:#080b12;--panel:#111723;--line:#273244;--gold:#f6c94b;--muted:#8e9bad;--white:#f7f8fb}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overscroll-behavior:none}
+body{min-height:100svh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+button,input{font:inherit}button{border:0;cursor:pointer;color:inherit}
+.app{max-width:760px;margin:auto;min-height:100svh;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;justify-content:space-between;padding:15px 18px 12px}
+.brand{font-size:18px;font-weight:900;letter-spacing:1.4px}.sub{font-size:9px;letter-spacing:1.7px;color:var(--gold);font-weight:800;margin-top:3px}
+.iconbtn{width:42px;height:42px;border-radius:50%;background:#1b2432;border:1px solid #303c50;font-size:18px}
+.stage{position:relative;margin:0 12px;border-radius:22px;overflow:hidden;background:#020409;aspect-ratio:3/4;max-height:58svh;display:grid;place-items:center;border:1px solid #202b3b}
+#video{width:100%;height:100%;object-fit:cover;transform:scale(var(--digital-zoom,1));transition:transform .08s linear}
+#placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#9aa6b8;padding:25px;line-height:1.5}
+.hud{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:13px;pointer-events:none}
+.hudrow{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pill{background:#05080dcc;border:1px solid #ffffff24;padding:7px 10px;border-radius:30px;font-size:10px;font-weight:800;letter-spacing:.7px}
+.live{color:#ff5757}.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff4545;margin-right:5px}
+.focusmark{width:48px;height:48px;border:1px solid #f6d56c;border-radius:50%;position:absolute;display:none;pointer-events:none}
+.focusmark:before,.focusmark:after{content:"";position:absolute;background:#f6d56c}.focusmark:before{width:1px;height:62px;left:23px;top:-8px}.focusmark:after{height:1px;width:62px;top:23px;left:-8px}
+.controls{padding:14px 18px 8px}
+.zoomhead{display:flex;justify-content:space-between;align-items:end}.zoomvalue{font-size:34px;font-weight:850;font-variant-numeric:tabular-nums}.smallcap{font-size:9px;color:var(--muted);font-weight:800;letter-spacing:1px}
+input[type=range]{width:100%;accent-color:var(--gold);margin:12px 0 10px}
+.presets{display:flex;justify-content:space-between;gap:5px;flex-wrap:wrap}
+.preset{background:#1a2331;border:1px solid #2b3749;border-radius:20px;padding:7px 10px;font-size:10px;font-weight:800}
+.preset.active{background:var(--gold);color:#17130a;border-color:var(--gold)}
+.modes{display:flex;gap:9px;padding:10px 18px}
+.mode{flex:1;background:#121a27;border:1px solid #29364a;border-radius:14px;padding:11px 6px;text-align:center;font-size:11px;font-weight:800}
+.mode.active{border-color:var(--gold);color:var(--gold)}
+.shutterrow{display:flex;align-items:center;justify-content:center;gap:32px;padding:10px 18px 14px}
+.sidebtn{width:48px;height:48px;border-radius:50%;background:#1b2432;border:1px solid #344154;font-size:19px}
+.shutter{width:76px;height:76px;border-radius:50%;background:#f8f8f5;border:5px solid #aab1bc;box-shadow:0 0 0 3px #343d4c;position:relative}
+.shutter:after{content:"";position:absolute;inset:7px;border:1px solid #c9ccd0;border-radius:50%}
+.record{width:56px;height:56px;border-radius:50%;background:#1b2432;border:2px solid #5b687b;font-size:18px}
+.record.on{color:#ff4b4b;border-color:#ff4b4b}
+.status{padding:0 18px 12px;text-align:center;color:var(--muted);font-size:10px;min-height:24px}
+.notice{margin:0 14px 14px;padding:11px 13px;background:#171e2b;border:1px solid #303b4d;border-radius:13px;color:#b7c1d0;font-size:11px;line-height:1.45}
+.notice strong{color:var(--gold)}
+.bottom{display:flex;justify-content:space-around;border-top:1px solid #202b3a;padding:12px 8px calc(12px + env(safe-area-inset-bottom));margin-top:auto;color:#9aa6b8;font-size:10px}
+.bottom button{background:transparent;color:inherit;font-size:10px}
+.bottom button.active{color:var(--gold)}
+#gallery{display:none;position:fixed;inset:0;background:#080b12;z-index:10;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);overflow:auto}
+.galleryhead{display:flex;justify-content:space-between;align-items:center;padding:16px 0}
+#items{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.mediaitem{background:#141d2a;border:1px solid #29364a;border-radius:12px;padding:8px;overflow:hidden}
+.mediaitem img,.mediaitem video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#05070b}
+.mediaitem a{display:block;color:var(--gold);font-size:11px;padding:8px 2px;text-decoration:none}
+.modal{display:none;position:fixed;inset:0;background:#000b;z-index:20;align-items:end}
+.modalbox{background:#131b28;border:1px solid #354258;border-radius:20px 20px 0 0;padding:22px;width:100%;line-height:1.5}
+.modalbox button{background:var(--gold);color:#17130a;border-radius:12px;padding:12px 18px;font-weight:800;margin-top:12px}
+@media(min-width:650px){.stage{max-height:620px}.app{padding-bottom:15px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+ <div><div class="brand">SUPER ZOOM</div><div class="sub">PRO CAMERA • UP TO 200× DIGITAL</div></div>
+ <button class="iconbtn" id="galleryBtn" aria-label="Open gallery">▦</button>
+</header>
+<main>
+ <section class="stage" id="stage">
+  <video id="video" autoplay playsinline muted></video>
+  <div id="placeholder">📷<br><strong>Super Zoom Pro Camera</strong><br>Tap below to allow camera access<br><button id="startBtn" style="margin-top:16px;background:#f6c94b;color:#17130a;border-radius:22px;padding:12px 20px;font-weight:900">START CAMERA</button></div>
+  <div class="focusmark" id="focusmark"></div>
+  <div class="hud">
+   <div class="hudrow"><span class="pill live"><i class="dot"></i>LIVE</span><span class="pill" id="lensLabel">BACK CAMERA</span></div>
+   <div class="hudrow"><span class="pill" id="resolution">CAMERA READY</span><span class="pill" id="recordLabel">PHOTO</span></div>
+  </div>
+ </section>
+ <section class="controls">
+  <div class="zoomhead"><div><div class="smallcap">ZOOM LEVEL</div><div class="zoomvalue"><span id="zoomText">1.0</span><small style="font-size:16px">×</small></div></div><div class="smallcap" id="zoomKind">DIGITAL ZOOM</div></div>
+  <input id="zoomSlider" type="range" min="1" max="200" step="0.1" value="1" aria-label="Zoom level">
+  <div class="presets" id="presets">
+   <button class="preset active" data-z="1">1×</button><button class="preset" data-z="2">2×</button><button class="preset" data-z="3">3×</button><button class="preset" data-z="5">5×</button><button class="preset" data-z="10">10×</button><button class="preset" data-z="25">25×</button><button class="preset" data-z="50">50×</button><button class="preset" data-z="100">100×</button><button class="preset" data-z="200">200×</button>
+  </div>
+ </section>
+ <section class="modes">
+  <button class="mode active" data-mode="photo">📸 PHOTO</button>
+  <button class="mode" data-mode="video">🎥 VIDEO</button>
+  <button class="mode" data-mode="moon">🌙 MOON</button>
+  <button class="mode" data-mode="night">☾ NIGHT</button>
+ </section>
+ <section class="shutterrow">
+  <button class="sidebtn" id="switchBtn" aria-label="Switch camera">↻</button>
+  <button class="shutter" id="captureBtn" aria-label="Take photo"></button>
+  <button class="record" id="recordBtn" aria-label="Record video">●</button>
+ </section>
+ <div class="status" id="status">Allow camera access, then start capturing.</div>
+ <div class="notice"><strong>200× is digital zoom.</strong> iPhone 13 Pro Max has up to 3× optical telephoto zoom. Extreme zoom enlarges a small part of the image and cannot restore detail that the sensor did not capture.</div>
+</main>
+<nav class="bottom"><button class="active" id="tabCamera">◉ CAMERA</button><button id="tabGallery">▦ GALLERY</button><button id="helpBtn">ⓘ HOW TO INSTALL</button></nav>
+</div>
+<div id="gallery">
+ <div class="galleryhead"><strong>YOUR CAPTURES</strong><button class="iconbtn" id="closeGallery">✕</button></div>
+ <div id="items"></div>
+</div>
+<div class="modal" id="helpModal"><div class="modalbox"><strong>Install on iPhone</strong><p>In Safari, open your deployed Vercel address, tap the Share button, choose <b>Add to Home Screen</b>, then tap Add. Open Super Zoom from your Home Screen for an app-like experience.</p><p>Camera access requires HTTPS and your permission. Keep the app open while using the camera; iOS may stop camera access when you leave the page or lock the phone.</p><button id="closeHelp">Got it</button></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const video=$('#video'), slider=$('#zoomSlider'), zoomText=$('#zoomText'), statusEl=$('#status');
+let stream=null, track=null, recorder=null, chunks=[], mode='photo', zoom=1, facing='environment', gallery=[];
+function say(t){statusEl.textContent=t}
+function setZoom(v){
+ zoom=Math.max(1,Math.min(200,Number(v)||1));
+ slider.value=zoom; zoomText.textContent=zoom>=10?Math.round(zoom):zoom.toFixed(1);
+ video.style.setProperty('--digital-zoom',zoom);
+ $('#zoomKind').textContent=zoom<=3?'OPTICAL RANGE DEPENDS ON LENS':'DIGITAL ZOOM';
+ document.querySelectorAll('.preset').forEach(b=>b.classList.toggle('active',Number(b.dataset.z)===Math.round(zoom)));
+}
+slider.addEventListener('input',e=>setZoom(e.target.value));
+$('#presets').addEventListener('click',e=>{let b=e.target.closest('[data-z]');if(b)setZoom(b.dataset.z)});
+async function startCamera(){
+ try{
+  if(!navigator.mediaDevices?.getUserMedia) throw new Error('Camera access is not available. Open this site in Safari over HTTPS.');
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  stream=await navigator.mediaDevices.getUserMedia({audio:true,video:{facingMode:{ideal:facing},width:{ideal:1920},height:{ideal:1080}}});
+  video.srcObject=stream; track=stream.getVideoTracks()[0]; await video.play();
+  $('#placeholder').style.display='none';
+  let s=track.getSettings(); $('#resolution').textContent=(s.width||'')+' × '+(s.height||'');
+  $('#lensLabel').textContent=facing==='environment'?'REAR CAMERA':'FRONT CAMERA';
+  say('Camera is live. Tap the preview to focus where supported.');
+ }catch(e){say(e.message||'Unable to start camera. Check Safari camera permissions.');}
+}
+$('#stage').addEventListener('click',e=>{
+ const r=$('#stage').getBoundingClientRect(), x=e.clientX-r.left,y=e.clientY-r.top, mark=$('#focusmark');
+ mark.style.left=(x-24)+'px';mark.style.top=(y-24)+'px';mark.style.display='block';
+ setTimeout(()=>mark.style.display='none',900);
+ if(track?.applyConstraints){
+  const caps=track.getCapabilities?.();
+  if(caps?.focusMode?.includes('single-shot')) track.applyConstraints({advanced:[{focusMode:'single-shot'}]}).catch(()=>{});
+ }
+});
+$('#startBtn').onclick=startCamera;\n$('#switchBtn').onclick=()=>{facing=facing==='environment'?'user':'environment';startCamera()};
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.mode').forEach(x=>x.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode;
+ $('#recordLabel').textContent=mode.toUpperCase();
+ if(mode==='moon'){setZoom(Math.max(3,zoom));say('Moon preset: use a stable support and lower exposure in your iPhone camera controls if needed.');}
+ else if(mode==='night'){say('Night preset: hold the phone steady and use the brightest available scene.');}
+ else say(mode==='video'?'Video mode selected. Press the red button to record.':'Photo mode selected.');
+});
+function addToGallery(blob,type){
+ const url=URL.createObjectURL(blob);gallery.unshift({url,type,name:`SuperZoom-${new Date().toISOString().replace(/[:.]/g,'-')}.${type==='video'?(blob.type.includes('mp4')?'mp4':'webm'):'jpg'}`});
+ renderGallery();const a=document.createElement('a');a.href=url;a.download=gallery[0].name;a.click();
+}
+function renderGallery(){
+ $('#items').innerHTML='';
+ if(!gallery.length){$('#items').textContent='No captures in this session yet.';return;}
+ gallery.forEach(item=>{
+  const el=document.createElement('div');el.className='mediaitem';
+  const media=document.createElement(item.type==='video'?'video':'img');media.src=item.url;
+  if(item.type==='video'){media.controls=true;media.playsInline=true}else media.alt='Captured photo';
+  const a=document.createElement('a');a.href=item.url;a.download=item.name;a.textContent='↓ Save '+item.type;
+  el.append(media,a);$('#items').append(el);
+ });
+}
+$('#captureBtn').onclick=()=>{
+ if(!stream||!video.videoWidth){say('Start the camera first.');return;}
+ const w=video.videoWidth,h=video.videoHeight, cropW=w/zoom,cropH=h/zoom;
+ const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));
+ const ctx=c.getContext('2d');
+ const sx=(w-cropW)/2,sy=(h-cropH)/2;
+ ctx.filter='contrast(1.06) saturate(1.04)';
+ ctx.drawImage(video,sx,sy,cropW,cropH,0,0,c.width,c.height);
+ // Mild sharpening via unsharp mask is not reliably available in canvas; preserve natural pixels.
+ c.toBlob(blob=>{if(blob){addToGallery(blob,'photo');say('Photo captured. Use the download link in Gallery to save it.')}},'image/jpeg',.94);
+};
+$('#recordBtn').onclick=()=>{
+ if(!stream){say('Start the camera first.');return;}
+ if(recorder?.state==='recording'){recorder.stop();$('#recordBtn').classList.remove('on');$('#recordBtn').textContent='●';return;}
+ if(!window.MediaRecorder){say('Video recording is not supported in this Safari version.');return;}\n const mime=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t))||'';
+ try{
+  recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);chunks=[];
+  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  recorder.onstop=()=>{const type=recorder.mimeType.includes('mp4')?'video':'video';const blob=new Blob(chunks,{type:recorder.mimeType||'video/webm'});addToGallery(blob,type);say('Recording finished. Save it from Gallery.')};
+  recorder.start();$('#recordBtn').classList.add('on');$('#recordBtn').textContent='■';say('Recording video… press stop to finish.');
+ }catch(e){say('Video recording is not supported by this browser version. Try the latest iOS Safari.');}
+};
+$('#galleryBtn').onclick=$('#tabGallery').onclick=()=>{$('#gallery').style.display='block';renderGallery()};
+$('#closeGallery').onclick=$('#tabCamera').onclick=()=>$('#gallery').style.display='none';
+$('#helpBtn').onclick=()=>$('#helpModal').style.display='flex';
+$('#closeHelp').onclick=()=>$('#helpModal').style.display='none';
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+setZoom(1);
+</script>
+</body></html>
